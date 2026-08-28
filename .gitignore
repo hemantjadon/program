@@ -1,0 +1,11 @@
+# Editor / IDE
+.idea/
+.vscode/
+
+# Local tooling and agent artifacts
+.cursor/
+.claude/
+.mcp.json
+
+# Build / test output
+coverage.out

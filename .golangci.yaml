@@ -1,0 +1,160 @@
+version: "2"
+
+run:
+  go: "1.21"
+  timeout: 5m
+  tests: true
+  build-tags:
+    - unix
+
+linters:
+  default: standard
+  enable:
+    - errorlint
+    - nilerr
+    - nilnil
+    - bodyclose
+    - wastedassign
+    - predeclared
+    - bidichk
+    - dupword
+    - reassign
+    - revive
+    - gocritic
+    - unparam
+    - unconvert
+    - prealloc
+    - goconst
+    - mnd
+    - wrapcheck
+    - godot
+    - misspell
+    - whitespace
+    - gosec
+    - forbidigo
+    - thelper
+    - tparallel
+    - paralleltest
+    - testableexamples
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+        - name: var-naming
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: if-return
+        - name: increment-decrement
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+        - name: errorf
+        - name: empty-block
+        - name: superfluous-else
+        - name: unused-parameter
+        - name: unreachable-code
+        - name: redefines-builtin-id
+        - name: bool-literal-in-expr
+        - name: unnecessary-stmt
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - performance
+        - style
+      disabled-checks:
+        - hugeParam
+        - rangeValCopy
+    gosec:
+      excludes:
+        - G104
+    forbidigo:
+      forbid:
+        - pattern: '^fmt\.Print.*$'
+        - pattern: '^println$'
+        - pattern: '^print$'
+      analyze-types: true
+    wrapcheck:
+      ignore-sigs:
+        - .Errorf(
+        - errors.New(
+        - errors.Join(
+        - errors.Unwrap(
+        - .Wrap(
+        - .Wrapf(
+      ignore-package-globs:
+        - github.com/hemantjadon/program
+    mnd:
+      ignored-functions:
+        - make
+        - signal.Notify
+    godot:
+      scope: declarations
+      period: true
+      capital: false
+    misspell:
+      locale: US
+    goconst:
+      min-len: 5
+      min-occurrences: 5
+    unparam:
+      check-exported: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - std-error-handling
+    rules:
+      - path: _test\.go$
+        linters:
+          - wrapcheck
+          - gosec
+          - goconst
+          - mnd
+          - forbidigo
+          - errcheck
+          - unparam
+          - gocritic
+      - path: export_test\.go$
+        linters:
+          - revive
+      - text: exitError
+        linters:
+          - revive
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+    - gofumpt
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/hemantjadon/program
+    gofumpt:
+      extra:
+        group-params: true
+  exclusions:
+    generated: lax
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  uniq-by-line: false
+
+output:
+  formats:
+    text:
+      print-issued-lines: true
+      print-linter-name: true

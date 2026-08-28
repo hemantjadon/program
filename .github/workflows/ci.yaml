@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, go ${{ matrix.go }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        go: ['1.21', 'oldstable', 'stable']
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go }}
+      - run: go build ./...
+      - run: go vet ./...
+      - name: Test (race + coverage)
+        run: go test -v -race -timeout 5m -coverprofile=coverage.out -covermode=atomic ./...
+      - name: Coverage summary
+        run: go tool cover -func=coverage.out
+      # Coverage upload (enable once a coverage service is chosen; see plan).
+      # Uploads from a single matrix cell to avoid duplicate reports.
+      # - name: Upload coverage to Codecov
+      #   if: matrix.os == 'ubuntu-latest' && matrix.go == 'stable'
+      #   uses: codecov/codecov-action@v5
+      #   with:
+      #     files: coverage.out
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+
+  build:
+    name: build (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Compile/vet-only check for platforms hosted runners can't test,
+        # guarding both the `unix` and `!unix` build-tag branches.
+        target:
+          - freebsd/amd64
+          - openbsd/amd64
+          - netbsd/amd64
+          - linux/arm64
+          - linux/386
+          - windows/386
+          - windows/arm64
+          - js/wasm
+          - wasip1/wasm
+          - plan9/amd64
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: 'stable'
+      - name: Cross-compile and vet
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          export GOOS="${TARGET%/*}"
+          export GOARCH="${TARGET#*/}"
+          echo "Building for GOOS=$GOOS GOARCH=$GOARCH"
+          go build ./...
+          go vet ./...
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: 'stable'
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.13.2
+          args: --timeout 5m
